@@ -1,4 +1,4 @@
-# ddds_project
+# DDDS Project
 
 
 Dataset: https://www.kaggle.com/datasets/mohamedharris/supermart-grocery-sales-retail-analytics-dataset
