@@ -15,6 +15,15 @@ sales_data$date<-as.Date(lubridate::parse_date_time(sales_data$Order.Date, order
 
 
 ui <- fluidPage(
+    tags$head(
+        tags$style(
+            HTML("
+           .bigger-font {
+             font-size: 20px;
+           }
+           ")
+        )
+    ),
     titlePanel("Retail Analysis"),
     sidebarLayout(
         sidebarPanel(
@@ -27,11 +36,13 @@ ui <- fluidPage(
             fluidRow(
                 column(12,
                        h3("Total Sales"),
-                       textOutput("totalSales")
+                       textOutput("totalSales"),
+                       class = "bigger-font",
                 )),hr(),
             fluidRow(column(12,
                             h3("Total Profit"),
-                            textOutput("totalProfit"))
+                            textOutput("totalProfit"),
+                            class = "bigger-font")
         )),
         mainPanel(
             plotOutput("distPlot"),
@@ -47,13 +58,13 @@ server <- function(input, output) {
     output$totalSales<-renderText({  
         if(input$selected_region=="All"){
             total_sales <- sum(sales_data$Sales)
-            total_sales
+            paste(total_sales, "/- INR")
         }else{
             total_sales <- sales_data %>% 
                 filter(Region == input$selected_region) %>% 
-                select("Sales") %>%  
+                select("Sales") %>%   
                 sum()
-            total_sales
+            paste(total_sales, "/- INR")
         }
     })
     
@@ -76,14 +87,14 @@ server <- function(input, output) {
         if (input$selected_region=="All"){
             sales_data %>%
                 ggplot(aes(date,Sales)) +
-                geom_line() 
+                geom_line(color = "#800080") 
             
         }
         else{
             sales_data %>%
                 filter(Region==input$selected_region ) %>%
                 ggplot(aes(date,Sales)) +
-                geom_line() 
+                geom_line(color = "#800080") 
         }
     })
     
