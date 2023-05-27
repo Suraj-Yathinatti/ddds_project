@@ -7,7 +7,7 @@
 rm(list=ls()) # Clears memory
 graphics.off() # Clears graphs
 if (!require("pacman")) install.packages("pacman") #Installs package for package installation
-pacman::p_load("shiny", "tidyverse","dygraphs","xts","tidyr","lubridate", "leaflet", "viridis")
+pacman::p_load("shiny", "tidyverse","dygraphs","xts","tidyr","lubridate", "leaflet", "viridis", "reshape2",  "ggplot2", "DT")
 
 sales_data <- read.csv("Supermart Grocery Sales - Retail Analytics Dataset.csv", header= TRUE, sep = ",")
 sales_data$regions<- as.factor(sales_data$Region)
@@ -43,10 +43,13 @@ ui <- fluidPage(
                             h3("Total Profit"),
                             textOutput("totalProfit"),
                             class = "bigger-font")
-        )),
+            )),
         mainPanel(
             plotOutput("distPlot"),
-            leafletOutput("geomap")
+            plotOutput("scatterPlot"),
+            plotOutput("stackedBarPlot"),
+            plotOutput("boxPlot"),
+            dataTableOutput("datatable")
         )
     )
 )
@@ -98,7 +101,64 @@ server <- function(input, output) {
         }
     })
     
+    output$scatterPlot <- renderPlot({
+        if (input$selected_region == "All") {
+            sales_data %>%
+                ggplot(aes(Sales, Profit)) +
+                geom_point(color = "#800080") +
+                labs(x = "Sales", y = "Profit")
+        } else {
+            sales_data %>%
+                filter(Region == input$selected_region) %>%
+                ggplot(aes(Sales, Profit)) +
+                geom_point(color = "#800080") +
+                labs(x = "Sales", y = "Profit")
+        }
+    })
     
+    output$stackedBarPlot <- renderPlot({
+        if (input$selected_region == "All") {
+            sales_data %>%
+                group_by(Region, Category) %>%
+                summarise(total_sales = sum(Sales)) %>%
+                ggplot(aes(x = Region, y = total_sales, fill = Category)) +
+                geom_bar(stat = "identity") +
+                labs(x = "Region", y = "Total Sales", fill = "Category") +
+                scale_fill_viridis_d(option = "plasma", begin = 0.1, end = 0.9) +
+                theme(legend.position = "right")
+        } else {
+            sales_data %>%
+                filter(Region == input$selected_region) %>%
+                group_by(Region, Category) %>%
+                summarise(total_sales = sum(Sales)) %>%
+                ggplot(aes(x = Region, y = total_sales, fill = Category)) +
+                geom_bar(stat = "identity") +
+                labs(x = "Region", y = "Total Sales", fill = "Category") +
+                scale_fill_viridis_d(option = "plasma", begin = 0.1, end = 0.9) +
+                theme(legend.position = "right")
+        }
+    })
+    
+    output$boxPlot <- renderPlot({
+        if (input$selected_region == "All") {
+            sales_data %>%
+                ggplot(aes(Category, Sales)) +
+                geom_boxplot() +
+                labs(x = "Category", y = "Sales") +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1))
+        } else {
+            sales_data %>%
+                filter(Region == input$selected_region) %>%
+                ggplot(aes(Category, Sales)) +
+                geom_boxplot() +
+                labs(x = "Category", y = "Sales") +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1))
+        }
+    })
+    
+    output$datatable <- DT::renderDataTable({
+        DT::datatable(sales_data, options = list(scrollY = "300px", paging = FALSE, dom = 't', autoWidth = TRUE))
+    })
 }
 
 shinyApp(ui = ui, server = server)
