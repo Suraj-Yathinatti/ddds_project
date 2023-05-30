@@ -55,7 +55,7 @@ ui <- fluidPage(
       )
     ),
     mainPanel(
-      plotOutput("distPlot"),
+      dygraphOutput("distPlot2"),
       plotOutput("pieChart"),
       plotOutput("stackedBarPlot"),
       plotOutput("scatterPlot"),
@@ -93,13 +93,33 @@ server <- function(input, output) {
     }
   })
   
-  output$distPlot <- renderPlot({
+#  output$distPlot <- renderPlot({
+#    if (input$selected_region == "All") {
+#      monthly_sales %>%
+#        ggplot(aes(x = as.Date(paste0(month, "-01")), y = avg_sales/1000)) +
+#        geom_line(color = "#800080") +
+#        labs(x = "Year", y = "Average Sales (in thousand INR)") +
+#        scale_y_continuous(labels = function(x) paste0(x, "K"))
+#    } else {
+#      region_sales <- sales_data %>%
+#        filter(Region == input$selected_region) %>%
+#        mutate(month = format(date, "%Y-%m")) %>%
+#        group_by(month) %>%
+#        summarise(avg_sales = mean(Sales))
+#      
+#      region_sales %>%
+#        ggplot(aes(x = as.Date(paste0(month, "-01")), y = avg_sales/1000)) +
+#        geom_line(color = "#800080") +
+#        labs(x = "Year", y = "Average Sales (in thousand INR)") +
+#        scale_y_continuous(labels = function(x) paste0(x, "K"))
+#    }
+#  })
+  output$distPlot2<-renderDygraph({
+    
     if (input$selected_region == "All") {
-      monthly_sales %>%
-        ggplot(aes(x = as.Date(paste0(month, "-01")), y = avg_sales/1000)) +
-        geom_line(color = "#800080") +
-        labs(x = "Year", y = "Average Sales (in thousand INR)") +
-        scale_y_continuous(labels = function(x) paste0(x, "K"))
+      xtsdata <- xts(monthly_sales, order.by = as.Date(paste0(monthly_sales$month, "-01")))
+      dygraph(xtsdata)%>%
+        dyRangeSelector()
     } else {
       region_sales <- sales_data %>%
         filter(Region == input$selected_region) %>%
@@ -107,12 +127,11 @@ server <- function(input, output) {
         group_by(month) %>%
         summarise(avg_sales = mean(Sales))
       
-      region_sales %>%
-        ggplot(aes(x = as.Date(paste0(month, "-01")), y = avg_sales/1000)) +
-        geom_line(color = "#800080") +
-        labs(x = "Year", y = "Average Sales (in thousand INR)") +
-        scale_y_continuous(labels = function(x) paste0(x, "K"))
+      xtsdata <- xts(region_sales, order.by = as.Date(paste0(region_sales$month, "-01")))
+      dygraph(xtsdata)%>%
+        dyRangeSelector()
     }
+
   })
   
   output$pieChart <- renderPlot({
